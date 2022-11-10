@@ -1,0 +1,714 @@
+---
+title: "TD SIG niveau intermédiaire - étude de cas : priorisation des zones pour la rénovation énergétique du bâti dans l'agglomération Montpellier Méditerranée Métropole"
+author: | 
+  | Paul Taconet
+date: "30/10/2022"
+output: 
+  rmarkdown::pdf_document:
+    toc: true
+    toc_depth: 2
+    number_sections: true
+    fig_caption: yes        
+    includes:  
+      in_header: my_header.tex
+header-includes:
+    - \usepackage{color}
+    - \usepackage{framed}
+    - \usepackage{tcolorbox}
+urlcolor: blue
+toc-title: "Table des matières"
+---
+
+```{r setup, include=FALSE}
+#Sys.setenv(PATH=paste0(Sys.getenv("PATH"),"C:\\Users\\pault\\AppData\\Local\\Programs\\MiKTeX2.9\\miktex\\bin\\x64"))
+knitr::opts_chunk$set(echo=F,out.width = "100%")
+options(tinytex.verbose = TRUE)
+path_to_pic <- "/home/ptaconet/td_renovbati_montpellier/images"
+library(emo)
+```
+
+\setlength{\fboxsep}{.8em}
+
+
+\newtcolorbox{blackbox}{
+  colframe=orange,
+  coltext=black,
+  boxsep=5pt,
+  arc=4pt}
+  
+<!-- set up emoticon. images must be stored in the folder of the project -->
+\newcommand\emotarget{\raisebox{-.4ex}{\protect\includegraphics[height=2.5ex]{emo_target.png}}}
+\newcommand\emotask{\raisebox{-.4ex}{\protect\includegraphics[height=2.5ex]{emo_task.png}}}
+\newcommand\emotrophy{\raisebox{-.4ex}{\protect\includegraphics[height=2.5ex]{emo_trophy.png}}}
+\newcommand\emodevil{\raisebox{-.4ex}{\protect\includegraphics[height=2.5ex]{emo_devil.png}}}
+\newcommand\emoselect{\raisebox{-.4ex}{\protect\includegraphics[height=2.5ex]{selection.png}}}
+
+# Introduction
+
+## Préambule
+
+Ce document est un tutoriel à destination de personnes souhaitant exercer et approfondir leurs compétences en Systèmes d'Information Géographique (SIG). Nous proposons d'aborder quelques notions de niveau intermédiaire en SIG *via* un cas d'étude théorique lié aux problématiques actuelles de la transition énergétique : la rénovation énergétique du parc immobilier. Notre zone d'étude est la communauté de communes Montpellier Méditerranée Métropole. 
+
+Ce tutoriel requiert le logiciel libre QGIS (pour installer le logiciel : https://www.qgis.org/fr/site/forusers/download.html). Nous utilisons exclusivement des données ouvertes, disponibles en libre accès sur Internet. Après une rapide présentation du cas d'étude théorique, nous déroulons le tutoriel. Afin de contrôler le bon avancement du tutoriel, des questions sont régulièrement posées tout au long du tutoriel. Les réponses sont disponibles en fin de document.\
+
+**Prérequis pour aborder sereinement le document**: Concepts de bases en SIG (différence vecteur vs. raster), utilisation basique de QGIS (manipulations basiques de données vectorielles et rasterisées)
+
+**Notions et concepts de SIG abordés** : Assimilation de données géographiques, rastérisation, vectorisation, opérations attributaires, jointures spatiales, découpage, cartographie, catalogues de données spatiales, calculatrice raster
+
+**Mise en garde** : Le cas d'étude proposé dans ce document est théorique, et l'ensemble des critères proposés (notamment pour le calcul de l'indicateur de priorisation de rénovation énergétique) est très subjectif et n'est pas nécéssairement réaliste. En effet, ce tutoriel sert principalement de support pratique et pédagogique à l'enseignement des SIG. L'objectif est avant tout est la manipulation, le croisement, et le traitement de données géographiques. Aussi, les traitements proposés ne sont pas nécéssairement "optimisés" : nous privilégions la diversité des traitements et des analyses à leur rapidité d'exécution ou optimisation, ou encore le caractère réaliste de l'étude.
+
+## Présentation du cas d'étude théorique
+
+Dans le cadre de sa transition énergétique, la métropole Montpellier Méditerranée Métropole (MMM) va recevoir une aide financière de l'Etat, via l'Agence de l'environnement et de la maîtrise de l'énergie (ADEME), afin d'améliorer les performances énergétiques du parc immobilier de l'agglomération. Les services compétents de la MMM cherchent à cibler et prioriser les aides sur leur territoire. En tant que géomaticien à la MMM, ils font appel à vos compétences. Votre mission, si vous l'acceptez, est de produire un ensemble de cartes des zones qui pourraient bénéficier en priorité de ces aides au sein de la métropole. Pour cela, vous utiliserez des données géographiques multisource que vous croiserez et analyserez. 
+
+Dans un premier temps, vous serez amenés à réflechir aux critères pertinents pour le ciblage et la priorisation des zones à rénover. A partir de cette réflexion, vous conceptualiserez un indice de priorisation de renovation énergétique. Ensuite, vous mettez les mains dans le cambouis ! Vous allez produire deux analyses géographiques, correspondant à deux échelles d'études pertinentes. 
+
+Vous produirez d'abord une carte sur l'étendue spatiale de MMM entière. Vous calculerez l'indice de priorisation de renovation énergétique sur toute la MMM à une résolution spatiale de 200 m (i.e. 1 valeur de l'indice pour chaque carreau de 200 m x 200 m). 
+
+Dans un second temps, vous produirez une carte sur l'étendue d'un quartier de la ville de Montpellier, séléctionné pertinemment grâce à la carte produite à l'étape précédente. L'objectif ici sera de descendre en résolution spatiale par rapport à l'analyse précédente : calculer l'indice de priorisation de renovation énergétique à l'échelle de l'habitat (immeuble ou maison individuelle).
+
+En fin de TD, vous serez amenés à réflechir aux limites et améliorations potentielles des analyses et cartes effectuées. 
+
+Bon travail !
+
+```{r, out.width="1\\linewidth", fig.cap="Carte du territoire de Montpellier Méditerranée Métropole (31 communes, incluant Montpellier) (source : INSEE)", fig.align="center"}
+knitr::include_graphics(rep(file.path(path_to_pic,"carte_mmm.png")))
+```
+
+# Conceptualisation de la problématique et identification, recueil et exploration des données géographiques 
+
+## Conceptualiser la problématique
+
+La première étape - et non des moindres - consiste à réflechir aux critères pertinents pour cibler et prioriser les zones à rénover.\
+
+:::: {.blackbox data-latex=""}
+::: {data-latex=""}
+**Avant d'agir, réflechir...**\
+:::
+
+\emotarget \textbf{Objectifs} : Elaborer un indicateur pertinent de priorisation de rénovation énergétique du bâti.\
+
+\emotask \textbf{Etapes}:\
+
+Q1.1 : A votre avis, quels peuvent être les critères importants pour prioriser la distribution d'aides pour la rénovation du bâti ? Identifiez tout d'abord un ensemble de critères potentiels pertinents (climatiques, paysagers, démographiques, socio-économiques, etc.). Puis attribuez à chaque critère un poids relatif sur une échelle allant de 1 à 4 (1 = critère moins important, 4 = critère plus important). Enfin, avez-vous connaissance de sources de données géographiques par rapport aux critères que vous avez identifiés ?\
+
+Q1.2. A partir des critères identifiés et des données disponibles, élaborez un Indice de Priorisation de Rénovation Energétique (IPRE) sous la forme :\
+
+$$ IPRE = \sum_{i=1}^n poids_i \times critere_i $$ où n = nombre de critères identifiés
+
+::::
+
+## Identifier et recueillir les données nécéssaires
+
+Pour la suite de ce TD, nous allons utiliser la formule IPRE proposée en réponse de la Q1.2, à savoir : \
+
+\begin{math}
+\begin{aligned}
+&&IPRE = 2 \times perc\_ind +\\
+&&1 \times perc\_sup64 +\\
+&&4 \times perc\_pauv + \\
+&&4 \times perc\_inf1990 + \\
+&&3 \times perc\_coll + \\
+&&3 \times perc\_artif\_sols
+\end{aligned}
+\end{math}
+
+où : \
+`perc_ind` = % du nombre total d'individus présent dans la zone d'intérêt par rapport au nombre total d'individus dans la MMM\
+`perc_sup64`  = % d'individus de plus de 64 ans dans la zone d'intérêt\
+`perc_pauv` = % de ménages pauvres dans la zone d'intérêt\
+`perc_inf1990` = % de logements contruits avant 1990 dans la zone d'intérêt\
+`perc_coll` = % de ménages en logements collectifs dans la zone d'intérêt\
+`perc_artif_sols` = taux d'artificialisation des sols dans la zone d'intérêt\
+
+NB : notez encore une fois que cette formule est très théorique et n'a pas été élaborée sur la base d'une recherche approfondie des critères pertinents pour la rénovation énergétique des batiments. 
+
+
+Nous avons donc besoin de données géoréférencées sur : 
+
+- le nombre d'habitants
+- la répartition des habitants par classes d'age
+- le niveau de richesse des habitants
+- la répartition des habitants par type de bâti (individuel ou collectif)
+- l'âge du bati 
+- artificialisation des sols
+
+Nous allons utiliser trois sources de données : 
+
+- les **données socio-économiques** produites par l'Institut National de la Statistique et des Etudes Economiques (INSEE) et mises à disposition sur le site de l'INSEE (https://www.insee.fr) ;
+- les **données diverses** produites par la MMM ou ses partenaires, mise à disposition sur le catalogue OpenDATA de la MMM (https://data.montpellier3m.fr/)
+- les **données environnementales** produites par l'Agence Européenne de l'Environnement dans le cadre du programme Copernicus (programme européen d'observation de la Terre)  (https://www.copernicus.eu/en)
+
+Ces trois producteurs mettent leurs données à disposition de tous selon les [principes FAIR](https://fr.wikipedia.org/wiki/Fair_data), un ensemble de principes visant à rendre les données trouvables, accessibles, intéropérables et réutilisables.
+
+### Données démographiques et socio-économiques
+
+Pour les données socio-économiques, nous allons utiliser la base de données carroyée *Filosofi* de l'INSEE sur les Revenus, pauvreté et niveau de vie en 2015. Ces données sont accessibles à l'adresse suivante : https://www.insee.fr/fr/statistiques/4176290?sommaire=4176305 \
+
+:::: {.blackbox data-latex=""}
+::: {data-latex=""}
+:::
+
+\emotask Téléchargez, sur le lien ci-dessus, les données à l'échelle spatiale du carreau de 200 mètres. Prenez également connaissance des informations disponibles sous l'onglet "Dictionnaire des variables".
+
+::::
+
+### Données paysagères
+
+Nous allons ici utiliser un jeu de donnée spatialisé sur l'imperméabilité des sols, produit par l'Agence européenne de l'environnement. Rappel : cette donnée est utilisée comme proxy de la température (plus le sol est artificialisé, plus la température est haute). 
+
+:::: {.blackbox data-latex=""}
+::: {data-latex=""}
+:::
+
+\emotask Créez-vous un compte Copernicus à l'adresse suivante https://land.copernicus.eu/@@register puis allez sur la page suivante pour télécharger le jeu de données : https://land.copernicus.eu/pan-european/high-resolution-layers/imperviousness/status-maps/imperviousness-density-2018?tab=download et cherchez puis téléchargez le jeu de données `IMD-2018-100m-EEA39`.
+
+::::
+
+### Données de plan et référentiels de la MMM
+
+Les données de plan et référentiels de la MMM nous serviront indirectement, lors de différents traitements géographiques (découpage des données selon l'étendue de la zone d'étude, réalisation de la cartographie définitive, etc.). 
+
+:::: {.blackbox data-latex=""}
+::: {data-latex=""}
+:::
+
+\emotask Identifiez le jeu de données des contours des communes de MMM sur le catalogue OpenDATA de la MMM et téléchargez le. 
+
+::::
+
+## Installer les plugins nécéssaires dans QGIS
+
+Avant d'entamer les travaux d'analyse des données, et afin d'avoir un fond de carte (image satellitaire ou autre) sur lequel nous appuyer pour visualiser les données, nous allons télécharger l'extension QGIS "QuickMapServices". Les détails de ce plugin sont fournis à l'adresse suivante : https://nextgis.com/blog/quickmapservices/ \
+
+:::: {.blackbox data-latex=""}
+::: {data-latex=""}
+**Installer un plugin dans QGIS**\
+:::
+
+\emotarget \textbf{Objectifs} :
+
+- Installer un plugin dans QGIS
+- Savoir utiliser le plugin 'QuickMapServices' dans QGIS\
+
+\emotask \textbf{Etapes}:
+
+- Ouvrez QGIS
+- Allez dans le menu `Extension > Installer les extensions`, tapez 'QuickMapServices' dans la barre de recherche, puis installez l'extension. 
+- Un onglet `Internet` s'est ajouté à la barre des menus. Cliquez dessus, puis `QuickMapServices`, puis `Search QMS`.
+- Dans la barre de recherche qui s'est ouverte, tapez 'Google Satellite' puis cliquez sur `Add`. Vous devriez voir apparaitre un fond de carte satellitaire Google Satellite. Notez que le plugin propose un vaste ensemble de fonds cartographiques (OpenStreetMaps, Bing Maps, etc.).
+
+::::
+
+# Analyse n°1 : Cibler les zones prioritaires pour la rénovation du bâti à échelle 200m x 200m
+
+L'objectif de cette première analyse est de produire l'indicateur IPRE à l'échelle de l'agglomération entière et à une résolution spatiale de 200 m x 200 m. Pour cela, nous allons devoir combiner les données Filosifi de l'INSEE et les données d'imperméabilité des sols de l'UE. Nous allons produire cette analyse selon les étapes suivantes : 
+
+- Charger et explorer les données
+- Découper les données selon l'emprise de la zone d'étude
+- Calculer les critères de l'IPRE liés à la BDD Filosifi de l'INSEE
+- Rasteriser les données Filosifi
+- Aligner les couches raster dérivées de Filosofi avec la couche raster d'imperméabilité des sols
+- Générer une nouvelle couche raster représentant les valeurs de l'IPRE à partir de l'ensemble des couches raster alignées
+- Réaliser une carte de l'indicateur IPRE à l'échelle de l'agglomération
+
+## Charger et explorer les données dans QGIS
+
+Avant de réaliser les traitements géographiques, nous allons explorer les différentes données téléchargées afin d'en comprendre le contenu.\
+
+:::: {.blackbox data-latex=""}
+::: {data-latex=""}
+**Explorer et comprendre des jeux de données géographiques vectorielles et rastérisées**\
+:::
+
+\emotarget \textbf{Objectifs} :
+
+- Identifier, explorer, comprendre des métadonnées de données géographiques
+- Explorer une couche vectorielle
+- Explorer une couche rastérisée\
+ 
+\emotask \textbf{Etapes}: 
+
+- Chargez l'ensemble des données téléchargées dans QGIS
+- Sauvegardez le projet QGIS ! Et pensez à le faire régulièrement tout au long du travail, pour ne pas perdre la progression de votre travail en cas de plantage !
+- Répondez aux questions de la section ci-dessous **Avez-vous réussi ?** qui vous forceront à manipuler les données dans tous les sens \emodevil \
+
+\emotrophy \textbf{Avez-vous réussi ?} : 
+
+- Q2.1 : Base de données Filosofi : Que signifie l'attribut `Men_pauv` ? Selon la base Filosofi, quels quartiers de Montpellier regroupent le plus grand nombre de ménages pauvres ?  Quels sont les noms des quatre attributs qui encodent l'âge des batiments ?  
+- Q2.2 : Raster d'imperméabilité des sols : Que représentent ces données (en une phrase) ? Comment ont été générées ces données (i.e. quelles sont les données source ayant permis de les générer) ? Quelle est la couverture spatiale des données ? La résolution spatiale du raaster ? Quelle est l'étendue des valeurs du raster ? Quelle est le taux d'imperméabilité des sols au niveau du théatre de la Vignette de l'UPVM (R=79) ?  https://land.copernicus.eu/user-corner/technical-library/imperviousness-2018-user-manual.pdf
+
+::::
+
+## Découper les données selon l'emprise de la zone d'étude
+
+Afin de réduire les temps de traitements, nous allons tout d'abord découper les données qui recouvrent une étendue plus large que les limites de l'agglomération MMM selon les limites de MMM. Il s'agit en l'occurrence des données carroyées de l'INSEE (BDD Filosofi), et des données d'imperméabilité des surfaces de l'Agence Européenne de l'Environnement. Les autres données sont produites sur l'étendue géographique de MMM.\
+
+:::: {.blackbox data-latex=""}
+::: {data-latex=""}
+**Couper une couche vectorielle selon une région d'intérêt**\
+:::
+
+\emotarget \textbf{Objectifs} : Découper la BDD Filosofi selon l'emprise de la MMM\
+
+\emotask \textbf{Etapes} : 
+
+- Aller dans le menu `Vecteur > Outil de géotraitement > Couper`
+- Dans le menu déroulant `Couche source`, cliquez sur `Filosofi2015_carreaux_200m_metropole`
+- Dans le menu déroulant `Couche de superposition`, cliquez la couche `MMM_MMM_Limites` (couche vectorielle de l'emprise de la zone d'étude)
+- Sauvegardez la couche dans le dossier de votre projet (`Découpé`) et appelez-la `Filosofi_mmm`
+- Retirez la couche `Filosofi2015_carreaux_200m_metropole` du panneau des couches de votre projet QGIS\
+
+\emotrophy \textit{Avez-vous réussi ?} : 
+
+- Q3.1 : Combien y a-t-il de carreaux Filosofi dans l'étendue de la zone d'étude MMM ?
+- Q3.2 : Quelle est la population totale de la MMM, selon les données de l'INSEE ?
+
+:::
+
+```{r, out.width="1\\linewidth", fig.cap="Aperçu de la base de données Filosofi de l'INSEE découpé selon la région de MMM. L'attribut 'Ind' est cartographié.", fig.align="center"}
+knitr::include_graphics(rep(file.path(path_to_pic,"filosofi_decoupe.png")))
+```
+
+:::: {.blackbox data-latex=""}
+::: {data-latex=""}
+**Couper une couche rasterisée selon une région d'intérêt**\
+:::
+
+\emotarget \textbf{Objectifs} : Découper la couche d'imperméabilité des sols selon l'emprise de la MMM\
+
+\emotask \textbf{Etapes} : 
+
+- Aller dans le menu `Raster > Extraction > Découper un raster selon une emprise`
+- Dans le menu déroulant `Couche source`, cliquez sur `IMD_2018_100m_eu_03035_V2_0`
+- Dans le menu déroulant `Etendue de découpage`, cliquez sur les points de suspension à droite, cliquez sur `Utiliser l'emprise de la couche`, puis séléctionnez la couche de l'emprise de la zone d'études (`MMM_MMM_Limites`)
+- Sauvegardez la couche dans le dossier de votre projet (`Découpé`) et appelez-la `impermeabilite_mmm`\
+- Retirez la couche `IMD_2018_100m_eu_03035_V2_0` du panneau des couches de votre projet QGIS\
+
+\emotrophy \textit{Avez-vous réussi ?} : 
+
+Q4. Quelle est la moyenne du taux d'imperméabilité des sols sur la zone de la MMM ? Indice : allez chercher dans les propriétés de la couche (clic-droit sur la couche `impermeabilite_mmm` puis `Propriétés`)
+
+:::
+
+```{r, out.width="1\\linewidth", fig.cap="Aperçu de la couche raster d'imperméabilité des sols découpé selon la région de MMM.", fig.align="center"}
+knitr::include_graphics(rep(file.path(path_to_pic,"imper_decoupe.png")))
+```
+
+
+## Calculer les indicateurs liés à la BDD Filosifi
+
+Dans la formule de l'IPRE proposée précédemment, 5 des 6 indicateurs composant la formule doivent être calculés avec la base de données Filosofi : `perc_ind` (% d'individus habitant dans le carreau par rapport au nombre total d'individus dans la MMM), `perc_sup64` (% d'individus de plus de 64 ans dans le carreau), `perc_pauv` (% de ménages pauvres dans le carreau), `perc_inf1990` (% de logements contruits avant 1990 dans le carreau), `perc_coll` (% de ménages en logements collectifs dans le carreau). Chacun de ces indicateurs doivent être calculés à partir d'attributs de la table attributaire.
+
+:::: {.blackbox data-latex=""}
+::: {data-latex=""}
+**Réaliser des opérations attributaires sur une couche vectorielle**\
+:::
+
+\emotarget \textbf{Objectifs} : Générer l'indicateur `perc_ind` à partir des attributs de la BDD Filosofi \
+
+\emotask \textbf{Etapes} : 
+
+- Q5 : Ecrivez, sur une feuille, la formule mathématique permettant de calculer, pour un carreau donné, le % d'individus habitant dans le carreau par rapport au nombre total d'individus dans la MMM
+- Ouvrez la table attributaire de la couche `Filosofi_mmm`
+- Depuis la table attributaire, ouvrez la "Calculatrice de champ", qui permet de calculer de nouveaux attributs à partir des attributs existants
+- Donnez à la nouvelle colonne le nom `perc_ind`
+- Dans `Type`, indiquez "Nombre décimal (réel)"
+- Dans `Précision` (i.e. nombre de décimales), indiquez 5
+- Dans le champs `Expression`, saisissez la formule indiquée à la première étape puis cliquez sur `OK`
+- Enfin, sortez du mode édition de la couche afin de sauvegarder le nouvel attribut calculé (pour cela : clic-droit sur la couche `Filosofi_mmm` puis cliquez sur `Basculer en mode édition` et `enregistrez les modifications`)
+
+:::
+
+```{r, out.width="0.8\\linewidth", fig.cap="Paramétrisation de la calculatrice de champs pour calculer l'attribut 'perc\\_ind'.", fig.align="center"}
+knitr::include_graphics(rep(file.path(path_to_pic,"calc_champs_perc_ind.png")))
+```
+
+:::: {.blackbox data-latex=""}
+::: {data-latex=""}
+:::
+
+\emotask Répétez l'opération pour les autres attributs à calculer depuis la BDD Filosofi (`perc_sup64`, `perc_pauv`, `perc_inf1990`, `perc_coll`). Les formules mathématiques permettant de calculer les attributs sont disponibles dans les réponses (Q5) si vous peinez à les trouver. 
+
+::::
+
+
+## Rastériser les indicateurs Filosofi
+
+Nous avons calculé les cinq indicateurs (ou variables) dérivées de la BDD Filosofi, mais il nous manque, pour le calcul final de l'IPRE, un indicateur : `perc_artif_sols`. Cette variable est calculée à partir de la couche d'imperméabilité des sols, qui est une couche raster - à l'inverse de la BDD Filosofi, qui est elle une couche vecteur. Pour croiser ces données de type différents, nous allons convertir la BDD Filosofi en couches raster, afin d'avoir un ensemble de données dans un seul et unique format. Le processus consistant à créer des couches géographiques raster à partir de couches vecteur se nomme **rastérisation** (l'inverse étant également faisable, et se nommant la **vectorisation**). Notez que rastériser est chose courante lorsque l'on croise des données géographique hétérogènes, multi-résolution, multisource. 
+
+:::: {.blackbox data-latex=""}
+::: {data-latex=""}
+**Rastériser une couche vectorielle**\
+:::
+
+\emotarget \textbf{Objectifs} : Rastériser les indicateurs nécéssaires au calcul de l'IPRE (`perc_sup64`, `perc_pauv`, `perc_inf1990`, `perc_coll`) \
+
+\emotask \textbf{Etapes} : 
+
+- Dans la barre des tâches de QGIS, cliquez sur `Raster`>`Conversion`>`Rastérisation`
+- Dans le menu déroulant `Couche en entrée`, cliquez sur `Filosofi_mmm`
+- Dans le menu déroulant `Field to use for a burn-in value`, cliquez sur `perc_ind`
+- Dans le menu déroulant `Output raster size unit`, séléctionnez `Unités géoréférencées`
+- Dans la case `Output raster size unit`, séléctionnez `Unités géoréférencées`
+- Dans la case `Width/Horizontal resolution`, saisissez 10
+- Dans la case `Height/Vertical resolution`, saisissez 10
+- Dans la case `Emprise du résultat`, cliquez sur les points de suspension à droite, cliquez sur `Utiliser l'emprise de la couche`, puis séléctionnez la couche de l'emprise de la zone d'études (`MMM_MMM_Limites`)
+- Sauvegardez la couche dans le dossier de votre projet (case `Rasterisé`) et appelez-la `rast_perc_ind`
+- Cliquez sur `Exécuter`
+- Il se peut que dans le gestionnaire des couches, la nouvelle couche ne se soit pas correctement nommée (i.e. qu'elle se nomme 'Rastérisé'). Dans ce cas, renommez la correctement (`rast_perc_ind`)\
+
+\emotrophy \textit{Avez-vous réussi ?} : 
+
+- Vérifiez visuellement que les valeurs de la nouvelle couche rastérisée se superposent géographiquement à celles de l'attribut 'perc_ind' de la couche la BDD Filosofi
+
+:::
+
+```{r, out.width="1\\linewidth", fig.cap="Paramétrisation pour rastériser l'attribut 'perc\\_ind' de la couche Filosofi\\_mmm.", fig.align="center"}
+knitr::include_graphics(rep(file.path(path_to_pic,"rasterisation_perc_ind.png")))
+```
+
+:::: {.blackbox data-latex=""}
+::: {data-latex=""}
+:::
+
+\emotask Répétez l'opération pour les autres attributs à rastériser depuis la BDD Filosofi (`perc_sup64`, `perc_pauv`, `perc_inf1990`, `perc_coll`).
+
+::::
+
+## Aligner les couches raster dérivées de Filosofi avec la couche raster d'imperméabilité des sols
+
+Vous noterez que les couches raster issue de l'opération de rastérisation précédentes (couches `rast_perc_ind`, `rast_perc_sup64`, `rast_perc_pauv`, `rast_perc_inf1990`, `rast_perc_coll`) ne sont pas spatialement alignées avec la couche d'imperméabilité des sols (couche ). Avant de calculer l'IPRE, nous allons aligner les couches raster issues de la BDD Filosofi avec la couche d'imperméabilité des sols. 
+
+:::: {.blackbox data-latex=""}
+::: {data-latex=""}
+**Aligner entre elles un ensemble de couches raster**\
+:::
+
+\emotarget \textbf{Objectifs} : Aligner les couches raster `rast_perc_ind`, `rast_perc_sup64`, `rast_perc_pauv`, `rast_perc_inf1990`, `rast_perc_coll` avec la couche `impermeabilite_mmm` \
+
+\emotask \textbf{Etapes} : 
+
+- Dans la barre des tâches de QGIS, cliquez sur `Raster`>`Aligner les raster`
+- Cliquez sur le petit `+` vert à droite de `Couches raster à aligner`
+- Dans le menu déroulant `Couche raster d'entrée`, Séléctionnez `rast_perc_ind`
+- Sauvegardez la couche dans le dossier de votre projet en l'appellant `rast_perc_ind_align`
+- Cliquez sur `OK`
+- Recommencez l'opération avec les couches `rast_perc_sup64`, `rast_perc_pauv`, `rast_perc_inf1990`, `rast_perc_coll` et `impermeabilite_mmm`
+- Dans le menu déroulant `Couche de référence`, séléctionnez `impermeabilite_mmm`. Cela indique que toutes les couches seront spatialement alignées sur cette couche. 
+- Enfin, cliquez sur `OK` pour lancer le processus d'alignement\
+
+\emotrophy \textit{Avez-vous réussi ?} : 
+
+- Visuellement, toutes les couches rasters doivent être bien alignées.
+
+::::
+
+## Calculer l'IPRE à partir de l'ensemble des couches rasterisées
+
+Toutes nos couches sont prêtes et alignées. Nous allons enfin pouvoir calculer notre indicateur spatialisé IPRE selon la formule définie au début du TD. Nous allons pour celà utiliser la calculatrice Raster.\
+
+:::: {.blackbox data-latex=""}
+::: {data-latex=""}
+**Utiliser la calculatrice Raster**\
+:::
+
+\emotarget \textbf{Objectifs} : Utiliser la calculatrice Raster pour calculer l'Indice de Priorisation de Rénovation Energétique \
+
+\emotask \textbf{Etapes} : 
+
+- Dans la barre des tâches de QGIS, cliquez sur `Raster`>`Calculatrice Raster`
+- Dans le champs 'Expression de la calculatrice raster', saisissez l'expression selon la formule mathématique de l'IPRE.
+- Dans le menu `Couche en sortie`, sauvegardez la couche résultante en l'appellant `IPRE`
+- Cliquez sur `OK`\
+
+\emotrophy \textit{Avez-vous réussi ?} : 
+
+- Q6 : Quelles sont les communes / quartiers de la MMM qui s'avèrent prioritaires pour recevoir les aides pour la rénovation énergétique du bati, selon l'IPRE que vous avez produit ?
+
+::::
+
+```{r, out.width="1\\linewidth", fig.cap="Paramétrisation de la calculatrice raster pour générer le raster représentant l'IPRE", fig.align="center"}
+knitr::include_graphics(rep(file.path(path_to_pic,"param_calc_raster_ipre.png")))
+```
+
+
+## Réaliser une carte de l'IPRE à l'échelle 200 m x 200 m sur l'étendue de la MMM
+
+Pour finir, nous allons produire une carte de l'IPRE sur l'étendue entière de la MMM, à destination des services compétents de la MMM.\
+
+:::: {.blackbox data-latex=""}
+::: {data-latex=""}
+**Produire une carte finalisée**\
+:::
+
+\emotask A l'aide du composeur d'impression (mise en page), réalisez une carte de l'IPRE. Pensez à contextualiser votre carte (fond de carte, contours de la MMM, etc.) et n'oubliez pas les éléments obligatoires (titre, légende, sources, échelle, etc) ! \
+
+\emotrophy \textit{Avez-vous réussi ?} : Voici une proposition de carte ci-dessous (évidemment, la votre peut être présentée différemment !).
+
+:::: 
+
+
+```{r, out.width="1\\linewidth", fig.cap="Carte de l'IPRE", fig.align="center"}
+knitr::include_graphics(rep(file.path(path_to_pic,"carte_ipre_echelleagglo.jpg")))
+```
+
+
+# Analyse n°2 : Cibler les zones prioritaires pour la rénovation du bâti à l'échelle du bâtiment
+
+Le travail effectué dans l'analyse n°1 nous a permis de produire une carte des zones à prioriser à une échelle satisfaisante (200 m x 200 m), mais dans une perspective opérationnelle, nous devons prioriser à une échelle plus fine. Dans la suite de ce travail, nous allons descendre en échelle : nous allons séléctionner un quartier de Montpellier et produire une carte de l'IPRE à l'échelle du batiment. Autrement dit, nous allons calculer une valeur d'IPRE pour chaque bâtiment du quartier.
+
+## Recueillir les données nécéssaires
+
+Pour cette étude, nous allons utiliser encore une fois la base de données Filosofi de l'INSEE ainsi que les données d'imperméabilité du sol, tout en ajoutant d'autres sources de données disponibles sur le catalogue de l'OpenDATA de MMM.
+ 
+:::: {.blackbox data-latex=""}
+::: {data-latex=""}
+:::
+
+\emotask Sur le catalogue OpenDATA de MMM, identifiez et téléchargez les jeux de données suivants :
+
+- distribution fine de la population sur la MMM
+- quartiers de Montpellier
+- ages des bâtiments
+
+Chargez ensuite les données dans votre projet QGIS.
+
+\emotrophy \textit{Avez-vous réussi ?} : Q7. Quel est le type de données du jeu de données de distribution fine de la population ? Quelles données sources et quels traitements géographiques ont été utilisés pour le générer ?
+
+::::
+
+## Découper les données selon l'emprise de la zone d'étude
+
+Nous allons effectuer l'étude dans le quartier Croix d'Argent (mais n'hésitez pas à séléctionner un autre quartier si vous le désirez ! Les étapes techniques seront identiques :) ). Pour cela, nous allons tout d'abord isoler le quartier Croix d'Argent dans la couche géographiques des quartiers de Montpellier.\
+
+:::: {.blackbox data-latex=""}
+::: {data-latex=""}
+:::
+
+\emotask 
+
+- Dans la couche `VilleMTP_MTP_Quartiers`, identifiez le quartier Croix d'Argent en passant par la table attributaire de la couche. Séléctionnez le quartier à l'aide de l'onglet "Selectionner les entités" ( \emoselect ) de la barre d'outils de QGIS.
+- Cliquez-droit sur la couche `VilleMTP_MTP_Quartiers` dans le gestionnaire des couches et séléctionnez `Exporter` > `Sauvegarder les entités sous`
+- Nommez le fichier que vous allez enregistrer (par exemple : `croixargent_limites`)
+- **Cochez la case `N'enregistrer que les entités séléctionnées`**
+- Laissez les autres paramètres avec leurs valeurs par défaut et cliquez sur `OK`
+
+::::
+
+```{r, out.width="0.8\\linewidth", fig.cap="Paramétrisation de l'option 'Enregistrer la couche vectorielle sous' pour la série d'étapes précédentes", fig.align="center"}
+knitr::include_graphics(rep(file.path(path_to_pic,"param_enregistrer_couche_vect.png")))
+```
+
+Notre quartier existant maintenant comme une couche géographique à part entière, nous allons découper les autres couches selon son emprise. 
+
+:::: {.blackbox data-latex=""}
+::: {data-latex=""}
+:::
+
+\emotask Découpez selon l'emprise du quartier les données (i) de population fine, (ii) d'âge du bati, et (iii) les données d'imperméabilité du sol (cf. analyse n°1 si vous ne vous souvenez plus de la manip...)
+ 
+::::
+
+## Vectoriser la couche d'imperméabilité des sols
+
+Avant de réaliser les jointures spatiales à suivre dans la prochaine section, nous devons vectoriser la couche raster d'imperméabilité des sols. Cette opération nous permettra ensuite de joindre cette couche à la couche vectorielle de la population fine. La vectorisation est l'inverse de la rastérisation, effectuée dans l'analyse n°1 de ce tutoriel : la vectorisation consiste à transformer une couche raster en une couche vecteur.
+
+:::: {.blackbox data-latex=""}
+::: {data-latex=""}
+**Vectoriser une couche raster**\
+:::
+
+\emotarget \textbf{Objectifs} : Vectoriser la couche d'imperméabilité sols \
+
+\emotask \textbf{Etapes} : 
+- Allez dans le menu `Raster` > `Conversion` > `Polygoniser (Raster vers Vecteur)`
+- Dans le menu déroulant `Couche en entrée`, séléctionnez `impermeabilite_croixargent` (ou tout autre nom que vous auriez donné à la couche lors de l'étape précédente de découpage)
+- Dans le case `Nom du champ à créer` (= nom de l'attribut dans la couche vecteur qui sera créée), saisissez 'impermeabilite'
+- Sous la case `Vectorisé`, enregistrez la couche sous le nom `impermeabilite_croixargent_vecteur`
+
+::::
+
+
+## Joindre spatialement les couches géographiques
+
+Comme annoncé dans l'introduction de l'analyse, nous allons calculer l'IPRE au niveau du batiment. Nous devons donc ramener l'ensemble des informations spatiales à l'échelle du batiment. Pour cela, nous allons effectuer des jointures spatiales entres les différentes couches (age du bati, Filosofi, imperméabilité des sols au format vectorisé), et la couche de la population fine (qui est calculée à l'échelle du bati). 
+
+:::: {.blackbox data-latex=""}
+::: {data-latex=""}
+**Réaliser des jointures spatiales entre couches géographiques**\
+:::
+
+\emotarget \textbf{Objectifs} : Joindre la couche de population fine avec la couche de l'age du bati \
+
+\emotask \textbf{Etapes} : 
+
+- Allez dans le menu `Vecteur` > `Outils de gestion de données` > `Joindre les attributs par localisation`
+- Dans le menu déroulant `Couche source`, indiquez la couche de population fine découpée selon les contours du quartier Croix d'argent (`popfine_croixargent`)
+- Dans le menu déroulant `Joindre la couche`, indiquez la couche de l'age du bati découpée selon les contours du quartier Croix d'argent (`agebati_croixargent`)
+- Sous la case `Couche issue de la jointure spatiale`, enregistrez la couche sous le nom `agebati_et_pop`
+- Cliquez sur `Exécuter`\
+
+\emotrophy \textit{Avez-vous réussi ?} 
+
+Dans la table attributaire de la nouvelle couche créée, doivent être présents à la fois l'attribut lié à la population (`pop_2018`) ainsi que les attributs liés aux dates du bati (`date_min`, `date_max`, `date_moy`)
+
+::::
+
+:::: {.blackbox data-latex=""}
+::: {data-latex=""}
+:::
+
+\emotask Répétez l'opération avec la BDD Filosofi : 
+- `Couche source` = `agebati_et_pop`
+- `Joindre la couche` = `Filosofi_mmm` (i.e. la couche de la BDD Filosofi que vous avez enrichi de divers attributs (`perc_sup64`, etc.) lors de l'analyse n°1)
+- `Couche issue de la jointure spatiale` = `agebati_pop_filosofi`
+
+::::
+
+:::: {.blackbox data-latex=""}
+::: {data-latex=""}
+:::
+
+\emotask Répétez l'opération avec les données d'imperméabilité des sols : 
+- `Couche source` = `agebati_pop_filosofi`
+- `Joindre la couche` = `impermeabilite_croixargent_vecteur`
+- `Couche issue de la jointure spatiale` = `couchefinale_analyse2`
+
+::::
+
+
+## Calculer l'IPRE au niveau du batiment
+
+La couche vectorielle `couchefinale_analyse2` contient maintenant tous les attributs nous permettant de calculer l'IPRE à l'échelle du bati : 
+
+- les attributs liés au nombre d'habitants par bâti
+- les attributs liés à l'âge du bati (issus de la jointure spatiale avec les données d'âge du bati)
+- les attributs socio-economomiques (issus de la jointure spatiale avec la BDD Filosofi)
+- les attributs liés à l'imperméabilité des sols (issus de la jointure spatiale avec la couche d'imperméabilité des sols)
+
+Nous allons donc calculer l'IPRE en créant un nouvel attribut à partir des attributs de la couche `couchefinale_analyse2`.
+
+:::: {.blackbox data-latex=""}
+::: {data-latex=""}
+:::
+
+\emotask 
+
+- Ouvrez la calculatrice de champs pour la couche `couchefinale_analyse2`
+- Créez un nouveau champs avec la formule de l'IPRE (si vous avez un doute sur les éléments à saisir : voir l'analyse n°1, boite 'Réaliser des opérations attributaires sur une couche vectorielle' )
+ 
+::::
+
+```{r, out.width="0.8\\linewidth", fig.cap="Paramétrisation de la calculatrice de champs pour générer l'attribut IPRE", fig.align="center"}
+knitr::include_graphics(rep(file.path(path_to_pic,"param_calc_champs_ipre.png")))
+```
+
+
+## Réaliser une carte de l'IPRE à l'échelle du batiment
+
+Enfin, comme pour l'analyse n°1, vous pouvez maintenant réaliser une carte de l'indice de priorisation de rénovation énergétique du bati, à l'échelle du batiment cette fois-ci. Si besoin, vous pouvez focaliser la carte sur une zone du quartier (et non sur l'étendue entière) pour améliorer sa lisibilité.
+
+:::: {.blackbox data-latex=""}
+::: {data-latex=""}
+**Produire une carte finalisée**\
+:::
+
+\emotask A l'aide du composeur d'impression (mise en page), réalisez une carte de l'IPRE. Pensez à contextualiser votre carte (fond de carte, contours de la MMM, etc.) et n'oubliez pas les éléments obligatoires (titre, légende, sources, échelle, etc) ! \
+
+\emotrophy \textit{Avez-vous réussi ?} : Voici une proposition de carte ci-dessous (évidemment, la votre peut être présentée différemment !).
+
+:::: 
+
+
+```{r, out.width="1\\linewidth", fig.cap="Carte de l'IPRE à l'échelle du bati dans le quartier Croix d'Argent à Montpellier", fig.align="center"}
+knitr::include_graphics(rep(file.path(path_to_pic,"carte_ipre_echellebati.jpg")))
+```
+
+
+# Limites et perspectives d'améliorations
+
+Félicitations ! Vous avez réalisé un travail de SIG qui permettra aux décideurs de cibler, selon des critères définis et transparents, l'octroi des subventions pour la rénovation énergétique des bâtiments dans la MMM.\
+
+Q8 : Quelles limites et perspectives d'améliorations entrevoyez-vous pour votre travail ? 
+
+
+\pagebreak
+
+# Réponses aux questions
+
+Q1.1 : Le tableau ci-dessous propose quelques critères ainsi qu'une pondération relative correspondante (note : ces critères, tout comme la pondération, sont très subjectifs; et il est possible que vous en ayez identifié d'autres. En situation réelle, il faudrait se documenter largement afin d'établir un tableau pertinent et consensuel). 
+
+|    Critère        |  Type | Explication succinte  | Poids priorisation rénovation     | 
+| :-------------- | :-------------: | :-------------------------------------------------: | :-------------: |
+| Nombre d'habitants | Démographique | Il est préférable de rénover en priorité un batiment ou une zone abritant un grand nombre de personnes (immeubles par rapport à maison individuelle) car la demande et consommation énergétique globale y est supérieure | 2 |
+| | |
+| Age des individus | Démographique | Plus les individus sont âgés, plus le besoin de comfort thermique et la consommation énergétique est à priori forte (et donc le besoin en rénovation énergétique urgent) | 1 |
+| | |
+| Revenu des ménages | Socio-économique | Les ménages moins aisés bénéficieront à priori en priorité des aides pour la rénovation de leurs habitations | 4 |
+| | |
+| Age du bâti | Socio-économique | Les batiments les plus anciens bénéficieront à priori en priorité des aides pour la rénovation énergétique | 4 |
+| | |
+| Type de bâti | Socio-économique | Il est préférable de rénover les logements collectifs car ils abritent une population plus importante (cf. critère Nombre d'habitants) | 3 |
+| | |
+| Température au sol  | Climatique   | La température au sol augmente l'effet "ilot de chaleur urbain" et ainsi le niveau d'incomfort en été (effet inversé en hiver) | 3 |
+| | |
+| Vent        |  Climatique |  Le vent améliore le confort thermique en été (ventilation naturelle des bâtiments) | 3 |
+| | |
+| Végétation   | Paysager |    La végétalisation des sols est un proxy de la température (sol + végétalisées => températures - hautes) | 3 |
+| | |
+| Artificialisation des sols | Paysager  | Le taux d'artificialisation des sols est un proxy de la température (sol + artificialisé => températures + hautes) | 3 |
+
+\
+
+Q1.2 Nous proposons la formule suivante pour l'indice IPRE :
+
+\begin{math}
+\begin{aligned}
+&&IPRE = 2 \times perc\_ind +\\
+&&1 \times perc\_sup64 +\\
+&&4 \times perc\_pauv + \\
+&&4 \times perc\_inf1990 + \\
+&&3 \times perc\_coll + \\
+&&3 \times perc\_artif\_sols
+\end{aligned}
+\end{math}
+
+\
+
+où : \
+`perc_ind` = nombre total d'individus présent dans la zone d'intérêt / nombre total d'individus dans la MMM\
+`perc_sup64`  = nombre d'individus de plus de 64 ans dans la zone d'intérêt / nb. individus total dans la zone d'intérêt\
+`perc_pauv` = nb. ménages pauvres dans la zone d'intérêt / nb. total de ménages \
+`perc_inf1990` = nb. de logements contruits avant 1990 dans la zone d'intérêt / nb total de logements \
+`perc_coll` = nb ménages en logements collectifs dans la zone d'intérêt / nb. total de ménages \
+`perc_artif_sols` = taux d'artificialisation des sols dans la zone d'intérêt\
+
+Q2.1. `Men_pauv` = nombre de ménages pauvres dans le carreau considéré. Les quartiers regroupant le plus grand nombre de ménages pauvres sont l'Ecusson et la Mosson. Les quatre attributs de la BDD Filosofi encodant l'âge des batiments sont : `Log_av45`, `Log_45_70`, `Log_70_90`, `Log_ap90` \
+
+Q2.2. Ces données représentent la distribution spatiale du taux d'imperméabilisation des sols du à l'artificilisation du territoire. La couverture spatiale est l'ensemble des pays de l'UE, et la résolution spatiale de la donnée est de 100 mètres. Les valeurs s'étendent de 0 (sol totalement perméable) à 100 (sol totalement imperméable). Ce jeu de données a été généré à partir de produits satellitaires multisources (pour plus de détails, voir  https://land.copernicus.eu/user-corner/technical-library/imperviousness-2018-user-manual.pdf). Le taux d'imperméabilité des sols au niveau du théatre de la Vignette de l'UPVM est de 79 %.\
+
+Q3.1. nb de carreaux Filosofi sur la MMM = 4268\
+
+Q3.2. population totale sur la MMM = 417634. Pour générer ce résultat : outil "statistiques basiques pour les champs" dans QGIS ou alors copier-coller la table attributaire dans excel et faire la somme de la colonne "Ind" \
+
+Q4. moyenne du taux d'imperméabilité des sols sur la MMM = 40.11 %.  Pour le savoir : aller dans les propriétés de la couche, onglet `Infirmation` puis cherchez `STATISTICS_MEAN` \
+
+Q5.\
+perc_ind = "Ind" / sum("Ind")  *  100 \
+perc_sup64 = ( "Ind_65_79" + "Ind_80p" ) / ( "Ind" ) * 100 \
+perc_pauv =  "Men_pauv" / "Men" * 100 \
+perc_inf1990 = ( "Log_av45" +  "Log_45_70" + "Log_70_90" ) / ("Log_av45" +  "Log_45_70" + "Log_70_90" + "Log_ap90" ) * 100 \
+perc_coll =  "Men_coll" / "Men" * 100 \
+
+Q6 : Ecusson, Mosson
+
+Q7 : Couche vectorielle, type point. Les données sources sont la base de données de l'INSEE et les données de bâti de Montpellier.
+
+Q8 : Quelques suggestions (non-exhaustives) : 
+
+- Affiner les critères de priorisation ainsi que leur pondération, sur la base de réelles recherches bibliographiques
+- Intégrer des données plus proches de la réalité des critères définis (e.g. températures au lieu de niveau d'imperméabilité des sols)
+- Normaliser l'IPRE entre 0 et 1
+- Se procurer les Diagnostics de Performance Energétique (DPE) des habitations qui en ont effecuté un (un jeu de données national des DPE est disponible ici : https://www.data.gouv.fr/fr/datasets/5ee2391763c79811ddfbc86a/ )
+
