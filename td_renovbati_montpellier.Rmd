@@ -1,7 +1,7 @@
 ---
-title: "TD SIG niveau intermédiaire - étude de cas : priorisation des zones pour la rénovation énergétique du bâti dans l'agglomération Montpellier Méditerranée Métropole"
+title: "TD SIG niveau intermédiaire - étude de cas : priorisation des zones pour la rénovation énergétique du bâti dans l'agglomération Montpellier Méditerranée Métropole par analyse multicritère spatialisée"
 author: | 
-  | Paul Taconet
+  | Paul Taconet, post-doctorant, IRD
 date: "30/10/2022"
 output: 
   rmarkdown::pdf_document:
@@ -47,25 +47,25 @@ library(emo)
 
 ## Préambule
 
-Ce document est un tutoriel à destination de personnes souhaitant exercer et approfondir leurs compétences en Systèmes d'Information Géographique (SIG). Nous proposons d'aborder quelques notions de niveau intermédiaire en SIG *via* un cas d'étude théorique lié aux problématiques actuelles de la transition énergétique : la rénovation énergétique du parc immobilier. Notre zone d'étude est la communauté de communes Montpellier Méditerranée Métropole. 
+Ce document est un tutoriel à destination de personnes souhaitant exercer et approfondir leurs compétences en Systèmes d'Information Géographique (SIG). Nous proposons d'aborder quelques notions de niveau intermédiaire en SIG *via* un cas d'étude théorique lié aux problématiques actuelles de la transition énergétique : la rénovation énergétique du parc immobilier. Notre zone d'étude est la communauté de communes Montpellier Méditerranée Métropole, située en France dans la région Occitanie. 
 
-Ce tutoriel requiert le logiciel libre QGIS (pour installer le logiciel : https://www.qgis.org/fr/site/forusers/download.html). Nous utilisons exclusivement des données ouvertes, disponibles en libre accès sur Internet. Après une rapide présentation du cas d'étude théorique, nous déroulons le tutoriel. Afin de contrôler le bon avancement du tutoriel, des questions sont régulièrement posées tout au long du tutoriel. Les réponses sont disponibles en fin de document.\
+Ce tutoriel requiert le logiciel de SIG libre QGIS (pour installer le logiciel : https://www.qgis.org/fr/site/forusers/download.html). Nous utilisons exclusivement des données ouvertes, disponibles en libre accès sur Internet. Après une rapide présentation du cas d'étude théorique, nous déroulons le tutoriel. Afin de contrôler le bon avancement du tutoriel, des questions sont régulièrement posées tout au long du tutoriel. Les réponses sont disponibles en fin de document.\
 
-**Prérequis pour aborder sereinement le document**: Concepts de bases en SIG (différence vecteur vs. raster), utilisation basique de QGIS (manipulations basiques de données vectorielles et rasterisées)
+**Prérequis pour aborder sereinement le document** : Concepts de bases en SIG (différence vecteur vs. raster), utilisation basique de QGIS (manipulations basiques de données vectorielles et rasterisées)
 
-**Notions et concepts de SIG abordés** : Assimilation de données géographiques, rastérisation, vectorisation, opérations attributaires, jointures spatiales, découpage, cartographie, catalogues de données spatiales, calculatrice raster
+**Notions et concepts de SIG abordés** : Assimilation de données géographiques, rastérisation, vectorisation, opérations attributaires, jointures spatiales, découpage, cartographie, catalogues de données spatiales, calculatrice raster, analyse multicritère spatialisée
 
-**Mise en garde** : Le cas d'étude proposé dans ce document est théorique, et l'ensemble des critères proposés (notamment pour le calcul de l'indicateur de priorisation de rénovation énergétique) est très subjectif et n'est pas nécéssairement réaliste. En effet, ce tutoriel sert principalement de support pratique et pédagogique à l'enseignement des SIG. L'objectif est avant tout est la manipulation, le croisement, et le traitement de données géographiques. Aussi, les traitements proposés ne sont pas nécéssairement "optimisés" : nous privilégions la diversité des traitements et des analyses à leur rapidité d'exécution ou optimisation, ou encore le caractère réaliste de l'étude.
+**Mise en garde** : Le cas d'étude proposé dans ce document est purement théorique, et l'ensemble des critères proposés (notamment pour le calcul de l'indicateur de priorisation de rénovation énergétique) est très subjectif et n'est pas nécéssairement réaliste. En effet, ce tutoriel sert principalement de support pratique et pédagogique à l'enseignement des SIG. L'objectif est avant tout est la manipulation, le croisement, et le traitement de données géographiques. Aussi, les traitements proposés ne sont pas nécéssairement "optimisés" : nous privilégions la diversité des traitements et des analyses à leur rapidité d'exécution ou optimisation, ou encore au caractère réaliste de l'étude.
 
 ## Présentation du cas d'étude théorique
 
-Dans le cadre de sa transition énergétique, la métropole Montpellier Méditerranée Métropole (MMM) va recevoir une aide financière de l'Etat, via l'Agence de l'environnement et de la maîtrise de l'énergie (ADEME), afin d'améliorer les performances énergétiques du parc immobilier de l'agglomération. Les services compétents de la MMM cherchent à cibler et prioriser les aides sur leur territoire. En tant que géomaticien à la MMM, ils font appel à vos compétences. Votre mission, si vous l'acceptez, est de produire un ensemble de cartes des zones qui pourraient bénéficier en priorité de ces aides au sein de la métropole. Pour cela, vous utiliserez des données géographiques multisource que vous croiserez et analyserez. 
+Dans le cadre de son plan de transition énergétique, la métropole Montpellier Méditerranée Métropole (MMM) va recevoir une aide financière de l'Etat, via l'Agence de l'environnement et de la maîtrise de l'énergie (ADEME), afin d'améliorer les performances énergétiques du parc immobilier de l'agglomération. Les services compétents de la MMM cherchent à cibler et prioriser les aides sur leur territoire. En tant que géomaticien à la MMM, ils font appel à vos compétences. Votre mission, si vous l'acceptez, est de produire un ensemble de cartes des zones qui pourraient bénéficier en priorité de ces aides au sein de la métropole. Pour cela, vous utiliserez des données géographiques multisource que vous croiserez et analyserez, selon une approche d'analyse multicritère spatialisée. 
 
 Dans un premier temps, vous serez amenés à réflechir aux critères pertinents pour le ciblage et la priorisation des zones à rénover. A partir de cette réflexion, vous conceptualiserez un indice de priorisation de renovation énergétique. Ensuite, vous mettez les mains dans le cambouis ! Vous allez produire deux analyses géographiques, correspondant à deux échelles d'études pertinentes. 
 
-Vous produirez d'abord une carte sur l'étendue spatiale de MMM entière. Vous calculerez l'indice de priorisation de renovation énergétique sur toute la MMM à une résolution spatiale de 200 m (i.e. 1 valeur de l'indice pour chaque carreau de 200 m x 200 m). 
+Vous produirez tout d'abord une carte de l'indice sur l'étendue spatiale de MMM entière : vous calculerez l'indice de priorisation de renovation énergétique sur toute la MMM à une résolution spatiale de 200 m (i.e. 1 valeur de l'indice pour chaque carreau de 200 m x 200 m). 
 
-Dans un second temps, vous produirez une carte sur l'étendue d'un quartier de la ville de Montpellier, séléctionné pertinemment grâce à la carte produite à l'étape précédente. L'objectif ici sera de descendre en résolution spatiale par rapport à l'analyse précédente : calculer l'indice de priorisation de renovation énergétique à l'échelle de l'habitat (immeuble ou maison individuelle).
+Dans un second temps, vous produirez une carte de l'indice sur l'étendue d'un quartier de la ville de Montpellier, séléctionné pertinemment grâce à la carte produite à l'étape précédente. L'objectif ici sera de descendre en résolution spatiale par rapport à l'analyse précédente : calculer l'indice de priorisation de renovation énergétique à l'échelle de l'habitat (immeuble ou maison individuelle).
 
 En fin de TD, vous serez amenés à réflechir aux limites et améliorations potentielles des analyses et cartes effectuées. 
 
@@ -155,7 +155,7 @@ Pour les données socio-économiques, nous allons utiliser la base de données c
 
 ### Données paysagères
 
-Nous allons ici utiliser un jeu de donnée spatialisé sur l'imperméabilité des sols, produit par l'Agence européenne de l'environnement. Rappel : cette donnée est utilisée comme proxy de la température (plus le sol est artificialisé, plus la température est haute). 
+Nous allons ici utiliser un jeu de donnée spatialisé sur l'imperméabilité des sols, produit par l'Agence européenne de l'environnement. Rappel : cette donnée est utilisée comme proxy de la température (plus le sol est artificialisé, plus la température est haute). \
 
 :::: {.blackbox data-latex=""}
 ::: {data-latex=""}
@@ -167,7 +167,7 @@ Nous allons ici utiliser un jeu de donnée spatialisé sur l'imperméabilité de
 
 ### Données de plan et référentiels de la MMM
 
-Les données de plan et référentiels de la MMM nous serviront indirectement, lors de différents traitements géographiques (découpage des données selon l'étendue de la zone d'étude, réalisation de la cartographie définitive, etc.). 
+Les données de plan et référentiels de la MMM nous serviront indirectement, lors de différents traitements géographiques (découpage des données selon l'étendue de la zone d'étude, réalisation de la cartographie définitive, etc.). \
 
 :::: {.blackbox data-latex=""}
 ::: {data-latex=""}
@@ -202,7 +202,7 @@ Avant d'entamer les travaux d'analyse des données, et afin d'avoir un fond de c
 
 # Analyse n°1 : Cibler les zones prioritaires pour la rénovation du bâti à échelle 200m x 200m
 
-L'objectif de cette première analyse est de produire l'indicateur IPRE à l'échelle de l'agglomération entière et à une résolution spatiale de 200 m x 200 m. Pour cela, nous allons devoir combiner les données Filosifi de l'INSEE et les données d'imperméabilité des sols de l'UE. Nous allons produire cette analyse selon les étapes suivantes : 
+L'objectif de cette première analyse est de produire l'indicateur IPRE à l'échelle de l'agglomération entière et à une résolution spatiale de 200 m x 200 m. Pour cela, nous allons devoir combiner les données Filosifi de l'INSEE et les données d'imperméabilité des sols de l'UE. Nous allons produire cette analyse selon les étapes suivantes (détaillées dans la suite du document) : 
 
 - Charger et explorer les données
 - Découper les données selon l'emprise de la zone d'étude
@@ -235,8 +235,8 @@ Avant de réaliser les traitements géographiques, nous allons explorer les diff
 
 \emotrophy \textbf{Avez-vous réussi ?} : 
 
-- Q2.1 : Base de données Filosofi : Que signifie l'attribut `Men_pauv` ? Selon la base Filosofi, quels quartiers de Montpellier regroupent le plus grand nombre de ménages pauvres ?  Quels sont les noms des quatre attributs qui encodent l'âge des batiments ?  
-- Q2.2 : Raster d'imperméabilité des sols : Que représentent ces données (en une phrase) ? Comment ont été générées ces données (i.e. quelles sont les données source ayant permis de les générer) ? Quelle est la couverture spatiale des données ? La résolution spatiale du raaster ? Quelle est l'étendue des valeurs du raster ? Quelle est le taux d'imperméabilité des sols au niveau du théatre de la Vignette de l'UPVM (R=79) ?  https://land.copernicus.eu/user-corner/technical-library/imperviousness-2018-user-manual.pdf
+- Q2.1 : Base de données Filosofi : Que signifie l'attribut `Men_pauv` ? Selon la base Filosofi, quels quartiers de Montpellier regroupent le plus grand nombre de ménages pauvres ? Quels sont les noms des quatre attributs qui encodent l'âge des batiments ?  
+- Q2.2 : Raster d'imperméabilité des sols : Que représentent ces données (en une phrase) ? Comment ont-elles été généré (i.e. quelles sont les données source ayant permis de les générer) ? Quelle est la couverture spatiale des données ? La résolution spatiale du raster ? Quelle est l'étendue des valeurs du raster ?
 
 ::::
 
@@ -259,7 +259,7 @@ Afin de réduire les temps de traitements, nous allons tout d'abord découper le
 - Sauvegardez la couche dans le dossier de votre projet (`Découpé`) et appelez-la `Filosofi_mmm`
 - Retirez la couche `Filosofi2015_carreaux_200m_metropole` du panneau des couches de votre projet QGIS\
 
-\emotrophy \textit{Avez-vous réussi ?} : 
+\emotrophy \textbf{Avez-vous réussi ?} : 
 
 - Q3.1 : Combien y a-t-il de carreaux Filosofi dans l'étendue de la zone d'étude MMM ?
 - Q3.2 : Quelle est la population totale de la MMM, selon les données de l'INSEE ?
@@ -282,10 +282,10 @@ knitr::include_graphics(rep(file.path(path_to_pic,"filosofi_decoupe.png")))
 - Aller dans le menu `Raster > Extraction > Découper un raster selon une emprise`
 - Dans le menu déroulant `Couche source`, cliquez sur `IMD_2018_100m_eu_03035_V2_0`
 - Dans le menu déroulant `Etendue de découpage`, cliquez sur les points de suspension à droite, cliquez sur `Utiliser l'emprise de la couche`, puis séléctionnez la couche de l'emprise de la zone d'études (`MMM_MMM_Limites`)
-- Sauvegardez la couche dans le dossier de votre projet (`Découpé`) et appelez-la `impermeabilite_mmm`\
+- Sauvegardez la couche dans le dossier de votre projet (`Découpé`) et appelez-la `impermeabilite_mmm`
 - Retirez la couche `IMD_2018_100m_eu_03035_V2_0` du panneau des couches de votre projet QGIS\
 
-\emotrophy \textit{Avez-vous réussi ?} : 
+\emotrophy \textbf{Avez-vous réussi ?} : 
 
 Q4. Quelle est la moyenne du taux d'imperméabilité des sols sur la zone de la MMM ? Indice : allez chercher dans les propriétés de la couche (clic-droit sur la couche `impermeabilite_mmm` puis `Propriétés`)
 
@@ -298,7 +298,7 @@ knitr::include_graphics(rep(file.path(path_to_pic,"imper_decoupe.png")))
 
 ## Calculer les indicateurs liés à la BDD Filosifi
 
-Dans la formule de l'IPRE proposée précédemment, 5 des 6 indicateurs composant la formule doivent être calculés avec la base de données Filosofi : `perc_ind` (% d'individus habitant dans le carreau par rapport au nombre total d'individus dans la MMM), `perc_sup64` (% d'individus de plus de 64 ans dans le carreau), `perc_pauv` (% de ménages pauvres dans le carreau), `perc_inf1990` (% de logements contruits avant 1990 dans le carreau), `perc_coll` (% de ménages en logements collectifs dans le carreau). Chacun de ces indicateurs doivent être calculés à partir d'attributs de la table attributaire.
+Dans la formule de l'IPRE proposée précédemment, 5 des 6 indicateurs composant la formule doivent être calculés avec la base de données Filosofi : `perc_ind` (% d'individus habitant dans le carreau par rapport au nombre total d'individus dans la MMM), `perc_sup64` (% d'individus de plus de 64 ans dans le carreau), `perc_pauv` (% de ménages pauvres dans le carreau), `perc_inf1990` (% de logements contruits avant 1990 dans le carreau), `perc_coll` (% de ménages en logements collectifs dans le carreau). Chacun de ces indicateurs doit être calculé à partir d'attributs de la table attributaire.
 
 :::: {.blackbox data-latex=""}
 ::: {data-latex=""}
@@ -335,7 +335,7 @@ knitr::include_graphics(rep(file.path(path_to_pic,"calc_champs_perc_ind.png")))
 
 ## Rastériser les indicateurs Filosofi
 
-Nous avons calculé les cinq indicateurs (ou variables) dérivées de la BDD Filosofi, mais il nous manque, pour le calcul final de l'IPRE, un indicateur : `perc_artif_sols`. Cette variable est calculée à partir de la couche d'imperméabilité des sols, qui est une couche raster - à l'inverse de la BDD Filosofi, qui est elle une couche vecteur. Pour croiser ces données de type différents, nous allons convertir la BDD Filosofi en couches raster, afin d'avoir un ensemble de données dans un seul et unique format. Le processus consistant à créer des couches géographiques raster à partir de couches vecteur se nomme **rastérisation** (l'inverse étant également faisable, et se nommant la **vectorisation**). Notez que rastériser est chose courante lorsque l'on croise des données géographique hétérogènes, multi-résolution, multisource. 
+Nous avons calculé les cinq indicateurs (ou variables) dérivées de la BDD Filosofi, mais il nous manque, pour le calcul final de l'IPRE, un indicateur : `perc_artif_sols`. Cette variable est calculée à partir de la couche d'imperméabilité des sols, qui est une couche raster - à l'inverse de la BDD Filosofi, qui est elle une couche vecteur. Pour croiser ces données de type différents, nous allons convertir la BDD Filosofi en couches raster, afin d'avoir un ensemble de données dans un seul et unique format. Le processus consistant à créer des couches géographiques raster à partir de couches vecteur se nomme **rastérisation** (l'inverse étant également faisable, et se nommant la **vectorisation**). Notez que rastériser est chose courante lorsque l'on croise des données géographique hétérogènes, multi-résolution, multisource.\
 
 :::: {.blackbox data-latex=""}
 ::: {data-latex=""}
@@ -358,7 +358,7 @@ Nous avons calculé les cinq indicateurs (ou variables) dérivées de la BDD Fil
 - Cliquez sur `Exécuter`
 - Il se peut que dans le gestionnaire des couches, la nouvelle couche ne se soit pas correctement nommée (i.e. qu'elle se nomme 'Rastérisé'). Dans ce cas, renommez la correctement (`rast_perc_ind`)\
 
-\emotrophy \textit{Avez-vous réussi ?} : 
+\emotrophy \textbf{Avez-vous réussi ?} : 
 
 - Vérifiez visuellement que les valeurs de la nouvelle couche rastérisée se superposent géographiquement à celles de l'attribut 'perc_ind' de la couche la BDD Filosofi
 
@@ -378,7 +378,7 @@ knitr::include_graphics(rep(file.path(path_to_pic,"rasterisation_perc_ind.png"))
 
 ## Aligner les couches raster dérivées de Filosofi avec la couche raster d'imperméabilité des sols
 
-Vous noterez que les couches raster issue de l'opération de rastérisation précédentes (couches `rast_perc_ind`, `rast_perc_sup64`, `rast_perc_pauv`, `rast_perc_inf1990`, `rast_perc_coll`) ne sont pas spatialement alignées avec la couche d'imperméabilité des sols (couche ). Avant de calculer l'IPRE, nous allons aligner les couches raster issues de la BDD Filosofi avec la couche d'imperméabilité des sols. 
+Vous noterez que les couches raster issue de l'opération de rastérisation précédentes (couches `rast_perc_ind`, `rast_perc_sup64`, `rast_perc_pauv`, `rast_perc_inf1990`, `rast_perc_coll`) ne sont pas spatialement alignées avec la couche d'imperméabilité des sols. Avant de calculer l'IPRE, nous allons aligner les couches raster issues de la BDD Filosofi avec la couche d'imperméabilité des sols. 
 
 :::: {.blackbox data-latex=""}
 ::: {data-latex=""}
@@ -398,7 +398,7 @@ Vous noterez que les couches raster issue de l'opération de rastérisation pré
 - Dans le menu déroulant `Couche de référence`, séléctionnez `impermeabilite_mmm`. Cela indique que toutes les couches seront spatialement alignées sur cette couche. 
 - Enfin, cliquez sur `OK` pour lancer le processus d'alignement\
 
-\emotrophy \textit{Avez-vous réussi ?} : 
+\emotrophy \textbf{Avez-vous réussi ?} : 
 
 - Visuellement, toutes les couches rasters doivent être bien alignées.
 
@@ -422,13 +422,13 @@ Toutes nos couches sont prêtes et alignées. Nous allons enfin pouvoir calculer
 - Dans le menu `Couche en sortie`, sauvegardez la couche résultante en l'appellant `IPRE`
 - Cliquez sur `OK`\
 
-\emotrophy \textit{Avez-vous réussi ?} : 
+\emotrophy \textbf{Avez-vous réussi ?} : 
 
 - Q6 : Quelles sont les communes / quartiers de la MMM qui s'avèrent prioritaires pour recevoir les aides pour la rénovation énergétique du bati, selon l'IPRE que vous avez produit ?
 
 ::::
 
-```{r, out.width="1\\linewidth", fig.cap="Paramétrisation de la calculatrice raster pour générer le raster représentant l'IPRE", fig.align="center"}
+```{r, out.width="1\\linewidth", fig.cap="Paramétrisation de la calculatrice raster pour générer le raster représentant l'IPRE (les poids des différents critères sont à ajouter)", fig.align="center"}
 knitr::include_graphics(rep(file.path(path_to_pic,"param_calc_raster_ipre.png")))
 ```
 
@@ -439,7 +439,7 @@ Pour finir, nous allons produire une carte de l'IPRE sur l'étendue entière de 
 
 :::: {.blackbox data-latex=""}
 ::: {data-latex=""}
-**Produire une carte finalisée**\
+**Produire une carte finalisée à l'aide du composeur d'impression**\
 :::
 
 \emotask A l'aide du composeur d'impression (mise en page), réalisez une carte de l'IPRE. Pensez à contextualiser votre carte (fond de carte, contours de la MMM, etc.) et n'oubliez pas les éléments obligatoires (titre, légende, sources, échelle, etc) ! \
@@ -456,7 +456,7 @@ knitr::include_graphics(rep(file.path(path_to_pic,"carte_ipre_echelleagglo.jpg")
 
 # Analyse n°2 : Cibler les zones prioritaires pour la rénovation du bâti à l'échelle du bâtiment
 
-Le travail effectué dans l'analyse n°1 nous a permis de produire une carte des zones à prioriser à une échelle satisfaisante (200 m x 200 m), mais dans une perspective opérationnelle, nous devons prioriser à une échelle plus fine. Dans la suite de ce travail, nous allons descendre en échelle : nous allons séléctionner un quartier de Montpellier et produire une carte de l'IPRE à l'échelle du batiment. Autrement dit, nous allons calculer une valeur d'IPRE pour chaque bâtiment du quartier.
+Le travail effectué dans l'analyse n°1 nous a permis de produire une carte des zones à prioriser à une échelle satisfaisante (200 m x 200 m), mais dans une perspective davantage opérationnelle, nous devons cibler et  prioriser à une échelle plus fine. Dans la suite de ce travail, nous allons monter en résolution : nous allons séléctionner un quartier de Montpellier et produire une carte de l'IPRE à l'échelle du batiment. Autrement dit, nous allons calculer une valeur d'IPRE pour chaque bâtiment du quartier.
 
 ## Recueillir les données nécéssaires
 
@@ -472,9 +472,9 @@ Pour cette étude, nous allons utiliser encore une fois la base de données Filo
 - quartiers de Montpellier
 - ages des bâtiments
 
-Chargez ensuite les données dans votre projet QGIS.
+Chargez ensuite les données dans votre projet QGIS.\
 
-\emotrophy \textit{Avez-vous réussi ?} : Q7. Quel est le type de données du jeu de données de distribution fine de la population ? Quelles données sources et quels traitements géographiques ont été utilisés pour le générer ?
+\emotrophy \textit{Avez-vous réussi ?} : Q7. Quel est le type de données du jeu de données de distribution fine de la population ? Quelles données sources ont été utilisées et quels traitements géographiques ont été réalisés pour le générer ?
 
 ::::
 
@@ -521,7 +521,7 @@ Avant de réaliser les jointures spatiales à suivre dans la prochaine section, 
 
 \emotarget \textbf{Objectifs} : Vectoriser la couche d'imperméabilité sols \
 
-\emotask \textbf{Etapes} : 
+\emotask \textbf{Etapes} : \
 - Allez dans le menu `Raster` > `Conversion` > `Polygoniser (Raster vers Vecteur)`
 - Dans le menu déroulant `Couche en entrée`, séléctionnez `impermeabilite_croixargent` (ou tout autre nom que vous auriez donné à la couche lors de l'étape précédente de découpage)
 - Dans le case `Nom du champ à créer` (= nom de l'attribut dans la couche vecteur qui sera créée), saisissez 'impermeabilite'
@@ -532,7 +532,7 @@ Avant de réaliser les jointures spatiales à suivre dans la prochaine section, 
 
 ## Joindre spatialement les couches géographiques
 
-Comme annoncé dans l'introduction de l'analyse, nous allons calculer l'IPRE au niveau du batiment. Nous devons donc ramener l'ensemble des informations spatiales à l'échelle du batiment. Pour cela, nous allons effectuer des jointures spatiales entres les différentes couches (age du bati, Filosofi, imperméabilité des sols au format vectorisé), et la couche de la population fine (qui est calculée à l'échelle du bati). 
+Comme annoncé dans l'introduction de l'analyse, nous allons calculer l'IPRE au niveau du batiment. Nous devons donc ramener l'ensemble des informations spatiales à l'échelle du batiment. Pour cela, nous allons effectuer des jointures spatiales entres les différentes couches (age du bati, Filosofi, imperméabilité des sols au format vectorisé), et la couche de la population fine (qui est calculée à l'échelle du bati). \
 
 :::: {.blackbox data-latex=""}
 ::: {data-latex=""}
@@ -549,7 +549,7 @@ Comme annoncé dans l'introduction de l'analyse, nous allons calculer l'IPRE au 
 - Sous la case `Couche issue de la jointure spatiale`, enregistrez la couche sous le nom `agebati_et_pop`
 - Cliquez sur `Exécuter`\
 
-\emotrophy \textit{Avez-vous réussi ?} 
+\emotrophy \textbf{Avez-vous réussi ?} 
 
 Dans la table attributaire de la nouvelle couche créée, doivent être présents à la fois l'attribut lié à la population (`pop_2018`) ainsi que les attributs liés aux dates du bati (`date_min`, `date_max`, `date_moy`)
 
@@ -560,6 +560,7 @@ Dans la table attributaire de la nouvelle couche créée, doivent être présent
 :::
 
 \emotask Répétez l'opération avec la BDD Filosofi : 
+
 - `Couche source` = `agebati_et_pop`
 - `Joindre la couche` = `Filosofi_mmm` (i.e. la couche de la BDD Filosofi que vous avez enrichi de divers attributs (`perc_sup64`, etc.) lors de l'analyse n°1)
 - `Couche issue de la jointure spatiale` = `agebati_pop_filosofi`
@@ -571,6 +572,7 @@ Dans la table attributaire de la nouvelle couche créée, doivent être présent
 :::
 
 \emotask Répétez l'opération avec les données d'imperméabilité des sols : 
+
 - `Couche source` = `agebati_pop_filosofi`
 - `Joindre la couche` = `impermeabilite_croixargent_vecteur`
 - `Couche issue de la jointure spatiale` = `couchefinale_analyse2`
@@ -616,7 +618,7 @@ Enfin, comme pour l'analyse n°1, vous pouvez maintenant réaliser une carte de 
 
 \emotask A l'aide du composeur d'impression (mise en page), réalisez une carte de l'IPRE. Pensez à contextualiser votre carte (fond de carte, contours de la MMM, etc.) et n'oubliez pas les éléments obligatoires (titre, légende, sources, échelle, etc) ! \
 
-\emotrophy \textit{Avez-vous réussi ?} : Voici une proposition de carte ci-dessous (évidemment, la votre peut être présentée différemment !).
+\emotrophy \textbf{Avez-vous réussi ?} : Voici une proposition de carte ci-dessous (évidemment, la votre peut être présentée différemment !).
 
 :::: 
 
@@ -625,12 +627,138 @@ Enfin, comme pour l'analyse n°1, vous pouvez maintenant réaliser une carte de 
 knitr::include_graphics(rep(file.path(path_to_pic,"carte_ipre_echellebati.jpg")))
 ```
 
-
 # Limites et perspectives d'améliorations
 
 Félicitations ! Vous avez réalisé un travail de SIG qui permettra aux décideurs de cibler, selon des critères définis et transparents, l'octroi des subventions pour la rénovation énergétique des bâtiments dans la MMM.\
 
 Q8 : Quelles limites et perspectives d'améliorations entrevoyez-vous pour votre travail ? 
+
+# Bonus : Cartographier l'efficacité énergétique du bati dans la MMM
+
+Dans ce travail bonus, nous allons exploiter la base de données nationale des Diagnostics de Performance Energétique (DPE). Le DPE renseigne sur la performance énergétique d’un logement ou d’un bâtiment, en évaluant sa consommation d’énergie et son impact en terme d’émissions de gaz à effet de serre. Le contenu et les modalités d’établissement du DPE sont réglementés. Nous allons réaliser des cartes des DPE moyens à deux échelles spatiales : la MMM (moyenne des DPE par commune) et la ville de Montpellier (moyenne des DPE par sous-quartier). Cela nous permettra de visualiser les zones, dans Montpellier et son agglomération, pour lesquelles les habitations sont les plus consommatrices en énergie, et celles dont le bilan carbone est le plus élevé. Ce travail nous permettra d'apprendre à utiliser un outil de SIG très utile : les statistiques résumées de données géographiques par zone d'intérêt. 
+
+## Recueillir les données nécéssaires
+
+Nous allons télécharger les données publiques des Diagnostics de Performance Energétique (DPE). La base de données des DPE Logements, distribuée par l'ADEME, rassemble l'ensemble des résultats des DPE au niveau national. Elle est disponible à l'adresse suivante : https://data.ademe.fr/datasets/dpe-france. Elle est téléchargeable par département sur le site de l'ADEME. Nous allons ici utiliser les données pour l'Hérault (34).\
+
+:::: {.blackbox data-latex=""}
+::: {data-latex=""}
+:::
+
+\emotask 
+
+- Sur le catalogue OpenDATA de MMM, identifiez et téléchargez le jeu de données des sous-quartiers de Montpellier
+- Sur le portail open data de l'ADEME, téléchargez le jeu de données des DPE du département de l'Hérault à l'adresse suivante : https://data.ademe.fr/datasets/dpe-34 \
+
+Chargez ensuite les données dans votre projet QGIS. Attention ! les données DPE sont distribuées au format CSV. Il faut les ouvrir en utilisant `Couche` > `Ajouter une couche` > `Ajouter une couche de texte délimité` puis en paramétrant la section "Définition de la géométrie" (à priori, la paramétrisation par défaut est correcte). \
+
+\emotrophy \textbf{Avez-vous réussi ?} : Q9 : Dans les données DPE, quels sont les noms des attributs qui encodent les étiquettes "énergie" (pour connaître la consommation d’énergie primaire) et "climat" (pour connaître la quantité de gaz à effet de serre émise) ? Quels sont les noms des attributs qui encodent les valeurs numériques de ces deux étiquettes ? 
+
+
+::::
+
+## Découper les données selon l'emprise de la zone d'étude
+
+Comme pour les deux analyses précédentes, nous commençons par découper les données selon l'emprise de la zone d'étude afin de rendre les traitements à venir plus digestes pour les machines !\
+
+:::: {.blackbox data-latex=""}
+::: {data-latex=""}
+:::
+
+\emotask 
+
+- Les données de DPE sont distribuées selon le système de coordonnées WGS84. Créez une nouvelle couche des DPE en Lambert-93, afin de les rendre compatibles avec les données de la MMM (qui sont distribuées en Lambert-93). 
+- Découpez les données des DPE selon les limites de la MMM (vous savez faire maintenant...!)
+
+::::
+
+## Caculer la valeur de consommation énergétique moyenne par communue de la MMM puis par sous-quartier de Montpellier
+
+Nous allons à présent calculer la consommation énergétique moyenne par communue de MMM dans un premier temps, puis par sous-quartier de Montpellier dans un second temps.\
+
+:::: {.blackbox data-latex=""}
+::: {data-latex=""}
+**Utiliser l'algorithme de jointure des attributs par localisation (résumé)**\
+:::
+
+\emotarget \textbf{Objectifs} : Calculer la consommation énergétique moyenne des habitations par commune de MMM \
+
+\emotask \textbf{Etapes} : 
+
+- Dans la barre de recherche de traitements, recherchez l'algorithme `Joindre les attributs par localisation (résumé)`
+- Dans le menu `Couche source`, séléctionnez la couche des communes de MMM 
+- Dans le menu `Joindre la couche`, séléctionnez la couche des DPE
+- Dans la case `Champs à résumer`, cliquez sur les points de suspension à droite de la case et cochez les deux attributs correspondants aux valeurs numériques, respectivement, des consommations énergétiques et de quantité de gaz à effet de serre émis
+- Dans la case `Résumé à calculer`, cliquez sur les points de suspension à droite de la case et cochez "compte", "moyenne", et "écart-type"
+- **Cochez la case `Supprimer les enregistrements qui ne peuvent être joints`**
+- Enfin, cliquez sur `OK` pour lancer le traitement\
+
+\emotrophy \textbf{Avez-vous réussi ?} : 
+
+- Q10 : Dans la commune de Montpellier : Quel est le nombre total de DPE réalisés ? La consommation moyenne des habitations selon ces DPE ? la quantité moyennes de gaz à effet de serre émis par ces habitations ? Mêmes questions pour la commune de Juvignac.
+
+::::
+
+```{r, out.width="1\\linewidth", fig.cap="Paramétrisation de l'algorithme de jointure spatiale et calcul des statistiques zonales", fig.align="center"}
+knitr::include_graphics(rep(file.path(path_to_pic,"param_jointure_sp_resume.png")))
+```
+
+
+:::: {.blackbox data-latex=""}
+::: {data-latex=""}
+:::
+
+\emotask Répétez l'opération en calculant cette fois-ci les moyennes des DPE à l'échelle des sous-quartiers de Montpellier.
+
+::::
+
+## Attribuer une classe de performance énergétique moyenne à chaque commune
+
+Les statistiques que nous venons de calculer donnent un résultat numérique, à savoir, d'une part la consommation d’énergie primaire et d'autre part la quantité de gaz à effet de serre émise. Dans les DPE, la lecture des diagnostics est facilitée par deux étiquettes à 7 classes de A à G (A correspondant à la meilleure performance, G à la plus mauvaise). Nous allons donc à présent calculer les étiquettes moyennes des batiments dans nos zones d'intérêt (communes de MMM puis quartiers de Montpellier). Pour cela, nous allons utiliser la calculatrice de champs avec une expression complexe.\
+
+
+:::: {.blackbox data-latex=""}
+::: {data-latex=""}
+**Utilisation complexe de la calculatrice de champs**\
+:::
+
+\emotarget \textbf{Objectifs} : Calculer la classe de performance énergétique moyenne pour chaque commune de MMM \
+
+\emotask \textbf{Etapes} : 
+
+- Identifiez la classification utilisée dans les DPE pour attribuer une classe énergétique en fonction de la valeur de consommation d’énergie (indice : la réponse se trouve ici : https://data.ademe.fr/datasets/dpe-france)
+- Ouvrez la calculatrice de champs pour la couche des DPE moyens à l'échelle des communes de MMM
+- Créez un nouveau champs de type Texte nommé 'etiquette_energie_moy', en saisissant l'opération complexe suivante dans le champs "Expression" :\
+
+```{r, out.width="0.8\\linewidth", fig.cap="Paramétrisation de l'algorithme de jointure spatiale et calcul des statistiques zonales", fig.align="center"}
+knitr::include_graphics(rep(file.path(path_to_pic,"param_calculatrice_champs_complexe.png")))
+```
+
+- Répétez l'opération pour calculer la classe moyenne "émissions de GES", en prenant en évidemment en compte le bon barême (à savoir, celui des émissions de GES).\
+
+\emotrophy \textbf{Avez-vous réussi ?} : \
+
+- Q11 : Pour la commune de Montpellier, quel est la classe de performance énergetique moyenne ? Même question pour la commune de Juvignac.
+
+::::
+
+
+
+:::: {.blackbox data-latex=""}
+::: {data-latex=""}
+:::
+
+\emotask Répétez l'opération avec les sous-quartiers de Montpellier
+
+::::
+
+## Réaliser une carte de la classe de performance énergétique moyenne des habitations par quartier à Montpellier
+
+Comme toujours, vous pouvez maintenant réaliser une (ou plusieurs) cartes ! Ci-dessous, un exemple de carte représentant la classe de performance énergétique moyenne des habitations par quartier à Montpellier.\
+
+```{r, out.width="1\\linewidth", fig.cap="Carte de la performance énergétique moyenne des habitations par quartier à Montpellier", fig.align="center"}
+knitr::include_graphics(rep(file.path(path_to_pic,"carte_classe_energetique_mtp.jpg")))
+```
 
 
 \pagebreak
@@ -712,3 +840,14 @@ Q8 : Quelques suggestions (non-exhaustives) :
 - Normaliser l'IPRE entre 0 et 1
 - Se procurer les Diagnostics de Performance Energétique (DPE) des habitations qui en ont effecuté un (un jeu de données national des DPE est disponible ici : https://www.data.gouv.fr/fr/datasets/5ee2391763c79811ddfbc86a/ )
 
+Q9 : Les quatre attributs d'intérêt sont : "classe_consommation_energie","classe_estimation_ges", "consommation_energie", "estimation_ges".
+
+Q10 : Montpellier : nb de DPE réalisés : 60546 . moyenne consommation : 136,62  -  moyenne gaz à effet de serre : 15,01
+Juvignac :  nb de DPE réalisés : 2413 . moyenne consommation : 80,81  -  moyenne gaz à effet de serre : 10,42
+
+Q11 : Montpellier : C  ;  Juvignac : B \
+
+\
+\
+
+Ce(tte) œuvre est mise à disposition selon les termes de la Licence Creative Commons Attribution - Pas d’Utilisation Commerciale 4.0 International.
