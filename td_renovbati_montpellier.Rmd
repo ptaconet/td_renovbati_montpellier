@@ -43,6 +43,8 @@ library(emo)
 \newcommand\emodevil{\raisebox{-.4ex}{\protect\includegraphics[height=2.5ex]{emo_devil.png}}}
 \newcommand\emoselect{\raisebox{-.4ex}{\protect\includegraphics[height=2.5ex]{selection.png}}}
 
+\pagebreak
+
 # Introduction
 
 ## Préambule
@@ -74,6 +76,8 @@ Bon travail !
 ```{r, out.width="1\\linewidth", fig.cap="Carte du territoire de Montpellier Méditerranée Métropole (31 communes, incluant Montpellier) (source : INSEE)", fig.align="center"}
 knitr::include_graphics(rep(file.path(path_to_pic,"carte_mmm.png")))
 ```
+
+\pagebreak
 
 # Conceptualisation de la problématique et identification, recueil et exploration des données géographiques 
 
@@ -199,6 +203,8 @@ Avant d'entamer les travaux d'analyse des données, et afin d'avoir un fond de c
 - Dans la barre de recherche qui s'est ouverte, tapez 'Google Satellite' puis cliquez sur `Add`. Vous devriez voir apparaitre un fond de carte satellitaire Google Satellite. Notez que le plugin propose un vaste ensemble de fonds cartographiques (OpenStreetMaps, Bing Maps, etc.).
 
 ::::
+
+\pagebreak
 
 # Analyse n°1 : Cibler les zones prioritaires pour la rénovation du bâti à échelle 200m x 200m
 
@@ -454,6 +460,8 @@ knitr::include_graphics(rep(file.path(path_to_pic,"carte_ipre_echelleagglo.jpg")
 ```
 
 
+\pagebreak
+
 # Analyse n°2 : Cibler les zones prioritaires pour la rénovation du bâti à l'échelle du bâtiment
 
 Le travail effectué dans l'analyse n°1 nous a permis de produire une carte des zones à prioriser à une échelle satisfaisante (200 m x 200 m), mais dans une perspective davantage opérationnelle, nous devons cibler et  prioriser à une échelle plus fine. Dans la suite de ce travail, nous allons monter en résolution : nous allons séléctionner un quartier de Montpellier et produire une carte de l'IPRE à l'échelle du batiment. Autrement dit, nous allons calculer une valeur d'IPRE pour chaque bâtiment du quartier.
@@ -626,6 +634,8 @@ Enfin, comme pour l'analyse n°1, vous pouvez maintenant réaliser une carte de 
 ```{r, out.width="1\\linewidth", fig.cap="Carte de l'IPRE à l'échelle du bati dans le quartier Croix d'Argent à Montpellier", fig.align="center"}
 knitr::include_graphics(rep(file.path(path_to_pic,"carte_ipre_echellebati.jpg")))
 ```
+
+\pagebreak
 
 # Limites et perspectives d'améliorations
 
