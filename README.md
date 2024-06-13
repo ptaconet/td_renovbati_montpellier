@@ -1,4 +1,4 @@
-# TD SIG niveau intermédiaire - étude de cas : priorisation des zones pour la rénovation énergétique du bâti dans l'agglomération Montpellier Méditerranée Métropole par analyse multicritère spatialisée
+# TD SIG niveau intermédiaire : Priorisation des zones pour la rénovation énergétique du bâti dans l'agglomération Montpellier Méditerranée Métropole par analyse multicritère spatialisée
 
 ## Présentation de la ressource pédagogique
 
@@ -8,7 +8,7 @@ Cet exercice requiert le logiciel de SIG libre QGIS.  Il utilise exclusivement d
 
 ## Lien vers la ressource pédagogique
 
-La ressource pédagogique se trouve au lien suivant : https://doi.org/10.5281/zenodo.7380029
+La ressource pédagogique est disponible à l'adresse suivante : https://doi.org/10.5281/zenodo.7380029
 
 ## Citation
 
